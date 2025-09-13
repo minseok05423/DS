@@ -20,7 +20,8 @@ public class ArrayList<E> implements ListInterface<E> {
             // error handling
         } 
         else {
-            for (int i = index; i >= numItems-1; i++) {
+            for (int i = numItems-1; i >= index; i--) {
+                // go from the back
                 item[i+1] = item[i];
             }
             item[index] = x;
@@ -34,7 +35,7 @@ public class ArrayList<E> implements ListInterface<E> {
         } 
         else {
             item[numItems++] = x;
-            numItems++;
+            // this increments numItems
         }
     }
 
@@ -44,7 +45,7 @@ public class ArrayList<E> implements ListInterface<E> {
         } 
         else {
             E tmp = item[index];
-            for (int i = index; i >= numItems-2; i++) {
+            for (int i = index; i <= numItems-2; i++) {
                 item[i] = item[i+1];
             }
             numItems--;
@@ -61,7 +62,7 @@ public class ArrayList<E> implements ListInterface<E> {
                 return false;
             }
         else {
-                for (int i = k; i >= numItems-2; i++) {
+                for (int i = k; i <= numItems-2; i++) {
                 item[i] = item[i+1];
             }
             numItems--;
