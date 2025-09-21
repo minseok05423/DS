@@ -9,6 +9,6 @@ public interface ListInterface<E> {
     public void set(int i, E x);
     public int indexOf(E x);
     public int len();
-    public boolean isEmpty();
+    public boolean isEmpty(); 
     public void clear();
 }
