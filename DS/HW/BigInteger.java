@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
   
@@ -10,7 +11,7 @@ public class BigInteger
     public static final String MSG_INVALID_INPUT = "Wrong Input";
   
     // implement this
-    public static final Pattern EXPRESSION_PATTERN = Pattern.compile("(\\d+)\\s*([\\+\\-\\*])\\s*(\\d+)");
+    public static final Pattern EXPRESSION_PATTERN = Pattern.compile("\\s*([+\\-]?)(\\d+)\\s*([\\+\\-\\*])\\s*([+\\\\-]?)(\\d+)\\s*");
     
     private int[] digits;
     private boolean isNegative = false;
@@ -52,19 +53,10 @@ public class BigInteger
   
     public BigInteger(String s)
     {   
-        if (s.charAt(0) == '-') {
-            isNegative = true;
-            String numberPart = s.substring(1);  
-            digits = new int[numberPart.length()];
-            for (int i = 0; i < numberPart.length(); i++) {
-            digits[i] = numberPart.charAt(numberPart.length() - 1 - i) - '0';
-          }
-        } else {
-            isNegative = false;
-            digits = new int[s.length()];
-            for (int i=0; i<s.length(); i++) {
-                digits[i] = s.charAt(s.length()-1-i) - '0';
-            }
+        isNegative = false;
+        digits = new int[s.length()];
+        for (int i=0; i<s.length(); i++) {
+            digits[i] = s.charAt(s.length()-1-i) - '0';
         }
     }
   
@@ -99,23 +91,23 @@ public class BigInteger
 
         int[] bigger = absCompare(this, big);
 
-        if ((this.isNegative == true) == (bigger == this.digits)) {
+        if (bigger == this.digits) {
             num1 = this.digits;
             num2 = big.digits;
         }
         else {
             num1 = big.digits;
             num2 = this.digits;
-        }    
+        }
 
-    // assume this >= big and both are positive
+        // assume this >= big and both are positive
         int maxLength = Math.max(num1.length, num2.length);
         int[] result = new int[maxLength];
         int borrow = 0;
 
         for (int i=0; i<maxLength; i++) {
-            int thisDigit = (i < this.digits.length) ? this.digits[i] : 0;
-            int bigDigit = (i < big.digits.length) ? big.digits[i] : 0;
+            int thisDigit = (i < num1.length) ? num1[i] : 0;
+            int bigDigit = (i < num2.length) ? num2[i] : 0;
 
             int calculation = thisDigit - bigDigit - borrow;
 
@@ -130,29 +122,28 @@ public class BigInteger
         int[] refinedResult = refine(result);
         BigInteger finalResult = new BigInteger(refinedResult);
 
-        if (bigger != num1) {
-            finalResult.isNegative = true;
+        if (bigger == this.digits) {
+            finalResult.isNegative = this.isNegative;
+        }
+        else {
+            finalResult.isNegative = !this.isNegative;
         }
 
         return finalResult;   
     }
 
     public BigInteger multiply(BigInteger big) {
-        int maxLength = Math.max(this.digits.length, big.digits.length);
-        // assume this >= big
         int[] result = new int[this.digits.length + big.digits.length];
-        int carry = 0;
-
-        for (int i=0; i<maxLength; i++) {
-            for (int k=0; k<this.digits.length; k++) {
-                int product = big.digits[i] * this.digits[k] + carry;
-                result[i + k] = product % 10;
-                carry = product / 10;
+        
+        for (int i = 0; i < this.digits.length; i++) {
+            for (int j = 0; j < big.digits.length; j++) {
+                result[i + j] += this.digits[i] * big.digits[j];
             }
         }
 
-        if (carry >= 0) {
-            result[this.digits.length + big.digits.length - 1] = carry;
+        for (int i = 0; i < result.length - 1; i++) {
+            result[i + 1] += result[i] / 10;
+            result[i] %= 10;
         }
 
         int[] refinedResult = refine(result);
@@ -172,7 +163,7 @@ public class BigInteger
             return digit2;
         }
         else {
-            for (int i = 0; i < digit1.length; i++) {
+            for (int i = digit1.length-1; i >= 0; i--) {
                 if (digit1[i] > digit2[i]) {
                     return digit1;
                 }
@@ -185,18 +176,28 @@ public class BigInteger
     }
 
     public int[] refine(int[] array) {
-        int[] result = new int[array.length];
-        for (int i=0; i<array.length; i++) {
-            if (array[i] > 0) {
-                result[i] = array[i];
-            }
+        int pointer = array.length-1;
+        int count = 0;
+
+        while (pointer >= 0 && array[pointer] == 0) {
+            pointer -= 1;
+            count += 1;
         }
-        return result;
+
+        if (count == array.length) {
+            return new int[]{0};
+        }
+
+        return Arrays.copyOf(array, array.length-count);
     } 
   
     @Override
     public String toString()
-    {
+    {   
+        int[] zero = new int[]{0};
+        if (Arrays.equals(this.digits, zero)) {
+            return "0";
+        }
         String result = "";
         if (this.isNegative) {
             result = "-";
@@ -211,36 +212,48 @@ public class BigInteger
     {
         Matcher matcher = EXPRESSION_PATTERN.matcher(input);
         if (matcher.matches()) {
+
             String group1 = matcher.group(1);
-            String operator = matcher.group(2); 
+            String group2 = matcher.group(2); 
             String group3 = matcher.group(3);
+            String group4 = matcher.group(4);
+            String group5 = matcher.group(5);
 
-            BigInteger num1 = new BigInteger(group1);
-            BigInteger num2 = new BigInteger(group3);
+            BigInteger num1 = new BigInteger(group2);
+            BigInteger num2 = new BigInteger(group5);
 
-            switch (operator) {
-                case "+":
-                    if (num1.isNegative == num2.isNegative) {
-                        return num1.add(num2);
-                    } else {
-                        return num1.subtract(num2);
-                    }
-                case "-":
-                    if (num1.isNegative == num2.isNegative) {
-                        return num1.subtract(num2);
-                    } else {
-                        return num1.add(num2);
-                    }
-                case "*":
-                    return num1.multiply(num2);
-                default:
-                    throw new AssertionError();
-                }
+            if (group1.compareTo("-") == 0) {
+                num1.isNegative = true;
+            }
+            if (group4.compareTo("-") == 0) {
+                num2.isNegative = true;
             }
 
+            switch (group3) {
+                case "+" -> {
+                    if (num1.isNegative == num2.isNegative) {
+                        return num1.add(num2);
+                    } else {
+                        return num1.subtract(num2);
+                    }
+                }
+                case "-" -> {
+                    if (num1.isNegative == num2.isNegative) {
+                        return num1.subtract(num2);
+                    } else {
+                        return num1.add(num2);
+                    }
+                }
+                case "*" -> {
+                    return num1.multiply(num2);
+                }
+                default -> throw new AssertionError();
+            }
         }
+        throw new IllegalArgumentException("Invalid expression format");
+    }
   
-    public static void main1(String[] args) throws Exception
+    public static void main(String[] args) throws Exception
     {
         try (InputStreamReader isr = new InputStreamReader(System.in))
         {
@@ -276,7 +289,7 @@ public class BigInteger
         {
             BigInteger result = evaluate(input);
             System.out.println(result.toString());
-  
+            
             return false;
         }
     }
