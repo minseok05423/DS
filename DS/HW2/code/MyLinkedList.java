@@ -71,8 +71,6 @@ public class MyLinkedList<T> implements ListInterface<T> {
 		if (i >=0 && i < numItems - 1) {
 			Node<T> prevNode = getNode(i - 1);
 			prevNode.setNext(prevNode.getNext().getNext());
-		} else {
-			// error handling
 		}
 	}
 }

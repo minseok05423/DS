@@ -1,5 +1,3 @@
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * Genre, Title 을 관리하는 영화 데이터베이스.
@@ -12,10 +10,6 @@ public class MovieDB {
 
     public MovieDB() {
         this.genreList = new MyLinkedList();
-		// FIXME implement this
-    	
-    	// HINT: MovieDBGenre 클래스를 정렬된 상태로 유지하기 위한 
-    	// MyLinkedList 타입의 멤버 변수를 초기화 한다.
     }
 
     public void insert(MovieDBItem item) {
@@ -45,16 +39,9 @@ public class MovieDB {
 		}
 		
 		currGenre.getItem().getMovieList().add(title);
-
-        // FIXME implement this
-        // Insert the given item to the MovieDB.
-
-    	// Printing functionality is provided for the sake of debugging.
-        // This code should be removed before submitting your work.
     }
 
     public void delete(MovieDBItem item) {
-		Iterator<Genre> Genreiter = genreList.iterator();
 
 		String genre = item.getGenre();
 		String title = item.getTitle();
@@ -86,19 +73,13 @@ public class MovieDB {
 			}
 		}
 
-		if (currNode.getItem().getMovieList().isEmpty()) {
+		if (currNode != null && currNode.getItem().getMovieList().isEmpty()) {
 			prevNode.setNext(currNode.getNext());
 		}
-
-        // FIXME implement this
-        // Remove the given item from the MovieDB.
-    	
-    	// Printing functionality is provided for the sake of debugging.
-        // This code should be removed before submitting your work.
     }
 
     public MyLinkedList<MovieDBItem> search(String term) {
-		MyLinkedList<MovieDBItem> results = new MyLinkedList<MovieDBItem>();
+		MyLinkedList<MovieDBItem> results = new MyLinkedList();
 
 		Node<Genre> currGenre = genreList.head;
 		while (currGenre.getNext() != null) {
@@ -111,22 +92,7 @@ public class MovieDB {
 					results.add(newItem);
 				}
 			}
-		}
-
-        // FIXME implement this
-        // Search the given term from the MovieDB.
-        // You should return a linked list of MovieDBItem.
-        // The search command is handled at SearchCmd class.
-    	
-    	// Printing search results is the responsibility of SearchCmd class. 
-    	// So you must not use System.out in this method to achieve specs of the assignment.
-    	
-        // This tracing functionality is provided for the sake of debugging.
-        // This code should be removed before submitting your work.
-    	
-    	// FIXME remove this code and return an appropriate MyLinkedList<MovieDBItem> instance.
-    	// This code is supplied for avoiding compilation error.   
-        
+		}       
 
         return results;
     }
@@ -143,23 +109,10 @@ public class MovieDB {
 				MovieDBItem newItem = new MovieDBItem(currGenre.getItem().getItem(), currMovie.getItem());
 				results.add(newItem);
 			}
-		}
-        // FIXME implement this
-        // Search the given term from the MovieDatabase.
-        // You should return a linked list of QueryResult.
-        // The print command is handled at PrintCmd class.
-
-    	// Printing movie items is the responsibility of PrintCmd class. 
-    	// So you must not use System.out in this method to achieve specs of the assignment.
-
-    	// Printing functionality is provided for the sake of debugging.
-        // This code should be removed before submitting your work.
-
-    	// FIXME remove this code and return an appropriate MyLinkedList<MovieDBItem> instance.
-    	// This code is supplied for avoiding compilation error.   
-        
-    	return results;
-    }
+    	}
+		
+		return results;
+	}
 }
 
 class Genre extends Node<String> implements Comparable<Genre> {
