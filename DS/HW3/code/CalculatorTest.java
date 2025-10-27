@@ -5,25 +5,28 @@ import java.util.Stack;
 
 public class CalculatorTest
 {	
-	private static Stack<Character> s;
-	private static Queue<String> q;
-	private static int lastType = 1;
-	// 0: operators as defined in isOperator
-	// 1: other types
-	private static int avgCount = 0;
-	private static String result = "";
-	private static Long calculation = 0L;
-	private static boolean isLastNum = false;
+	private static Stack<Character> s;        // operator and parenthesis stack
+	private static Queue<String> q;           // postfix output queue
+
+	// Parser state variables
+	private static int lastType = 1;          // 0: numbers/')' | 1: operators/'('/','
+	private static boolean isLastNum = false; // tracks consecutive numbers
+
+	// Function handling
+	private static int avgCount = 0;          // parameter count for avg function
 
 
+	// function to check if character is operator
 	private static boolean isOperator(char c) {
 		return c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^';
 	}
 
-	private static boolean isAvg(String token) {
+	// function to check if token is avg function during evalutate()
+	private static boolean isAvg(String token) { 
 		return token.matches("\\d+ avg");
 	}
 
+	// function to return precedence of operators
 	private static int pres(char c) {
 		int result;
 		switch (c) {
@@ -59,31 +62,39 @@ public class CalculatorTest
 		return result;
 	}
 
+	// handle left associative operators
 	private static void handleLeft(char c) {
 		while (!s.isEmpty() && pres(c) <= pres(s.peek()) && s.peek() != '(') {
+			// pop while top of stack has greater than or equal precedence
+			// pop until left parenthesis is found or stack is empty
 				q.offer(Character.toString(s.pop()));
 			}
 			s.push(c);
-			lastType = 1;
 	}
 
+	// handle right associative operators
+	// similar to handleLeft but with strict less than
+	// as right associative operators should not pop same precedence
 	private static void handleRight(char c) {
 		while (!s.isEmpty() && pres(c) < pres(s.peek()) && s.peek() != '(') {
 				q.offer(Character.toString(s.pop()));
 			}
 			s.push(c);
-			lastType = 1;
 	}
 
-	public static void rules(char c) {
+	// rules for handling operators, parentheses and commas
+	// basically anything other than numbers
+	public static void operatorRules(char c) {
 		if (isOperator(c)) {
 			if (c == '-' && lastType == 1) {
 				c = '~';
 			}
 			if (c == '^' || c == '~') {
 				handleRight(c);
+				lastType = 1;
 			} else {
 				handleLeft(c);
+				lastType = 1;
 			}
 			// Handle operator
 		} else if (c == '(') {
@@ -91,15 +102,19 @@ public class CalculatorTest
 			lastType = 1;
 			// Handle left parenthesis
 		} else if (c == ')') {
+			// pop until left parenthesis is found
 			while (s.peek() != '(') {
 				if (s.peek() != ',') {
 					q.offer(Character.toString(s.pop()));
 				} else {
-					Character.toString(s.pop());
+					s.pop();
+					// just pop comma without adding to output
 				}
 			}
+			
 			if (!s.isEmpty() && s.peek() == '(') {
 				if (avgCount != 0) {
+					// adding avg and avg count to the output queue
 					String str = (avgCount + 1) + " avg";
 					q.add(str);
 					avgCount = 0;
@@ -116,22 +131,27 @@ public class CalculatorTest
 		} else if (c == ' ' || c == '	') {
 			// Skip whitespace
 		} else {
-			// Invalid character - ERROR
+			throw new IllegalArgumentException("Invalid character: '" + c + "'");
 		}
 		
 	}
 
-	public static void postfixParsing(String input) {
+	// main method for parsing infix to postfix
+	private static void postfixParsing(String input) {
 		s = new Stack<>();
 		q = new LinkedList<>();
 
 		for (int i = 0; i < input.length(); i++) {
 			char c = input.charAt(i);
+			// Handle numbers
 			if (Character.isDigit(c)) {
 				if (isLastNum) {
+					// two consecutive numbers without operator
+					// reason why isLastNum is needed
 					throw new IllegalArgumentException("cannot have to consecutive numbers without operators");
 				}
 				String str = "" + c;
+				// handle multi-digit numbers
 				while (i + 1 < input.length() && Character.isDigit(input.charAt(i + 1))) {
 					str += input.charAt(i + 1);
 					i++;
@@ -139,27 +159,24 @@ public class CalculatorTest
 				q.offer(str);
 				lastType = 0;
 				isLastNum = true;
-				// Handle number
 			} else {
 				if (c != ' ' && c != '(' && c != ')' && c != '	') {
 					isLastNum = false;
 				}
-				rules(c);
+				operatorRules(c);
 			}
 		}
 
+		// pop remaining operators from stack
 		while (!s.isEmpty()) {
 			if (s.peek() == '(') {
 				throw new IllegalArgumentException("unresolved parenthesis: '('");
 			}
 			q.offer(Character.toString(s.pop()));
 		}
-
-		result = queueToString();
-		calculation = evaluate();
-		lastType = 1;
 	}
 
+	// convert queue to string for output
 	private static String queueToString() {
 		StringBuilder sb = new StringBuilder();
 		for (String s : q) {
@@ -168,7 +185,8 @@ public class CalculatorTest
 		return sb.toString().trim();  // Remove trailing space
 	}
 
-	public static long evaluate() {
+	// evaluate postfix expression
+	private static long evaluate() {
 		long A, B;
 		Stack<Long> stk = new Stack<>();
 
@@ -176,19 +194,23 @@ public class CalculatorTest
 			String item = q.poll();
 			Character lastChar = item.charAt(item.length() - 1);
 			if (Character.isDigit(lastChar)) {
+				// it's a number
 				long tmp = Long.parseLong(item);
 				stk.push(tmp);
 			} else if (isOperator(lastChar) && lastChar != '~') {
+				// it's a binary operator
 				B = stk.pop();  // Second operand
 				A = stk.pop();  // First operand
 				long val = operation(A, B, lastChar);
 				stk.push(val);
 			} else if (lastChar == '~') {
+				// it's a unary operator
 				A = stk.pop();
 				B = 0; // dummy value
 				long val = operation(A, B, lastChar);
 				stk.push(val);
 			} else if (isAvg(item)) {
+				// it's an avg function
 				String str = "";
 				int num;
 				for (int i = 0; i < item.length(); i++) {
@@ -199,10 +221,11 @@ public class CalculatorTest
 				num = Integer.parseInt(str);
 				A = stk.pop();
 				for (int i = 1; i < num; i++) {
+					// keep popping and adding to A
 					B = stk.pop();
 					A = A + B;
 				}
-				Long val = A / num;
+				Long val = A / num; // avg calculation
 				stk.push(val);
 			}
 		}
@@ -210,6 +233,7 @@ public class CalculatorTest
 		return stk.pop();
 	}
 
+	// perform arithmetic operations inside evaluate()
 	private static long operation(long a, long b, char ch) {
 		long val = 0;
 		switch (ch) {
@@ -259,25 +283,26 @@ public class CalculatorTest
 			catch (Exception e)
 			{
 				System.out.println("ERROR");
-				lastType = 1;
-				avgCount = 0;
-				result = "";
-				calculation = 0L;
-				isLastNum = false;
+				resetVariables();
 			}
 		}
+	}
+
+	private static void resetVariables() {
+		lastType = 1;
+		avgCount = 0;
+		isLastNum = false;
 	}
 
 	private static void command(String input) {
 		postfixParsing(input);
 		
+		String result = queueToString();
+		Long calculation = evaluate();
+
 		System.out.println(result);
 		System.out.println(calculation);
 
-		lastType = 1;
-		avgCount = 0;
-		result = "";
-		calculation = 0L;
-		isLastNum = false;
+		resetVariables();
 	}
 }
