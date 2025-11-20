@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(java:*)"
+      "Bash(java:*)",
+      "Bash(javac:*)"
     ],
     "deny": [],
     "ask": []
